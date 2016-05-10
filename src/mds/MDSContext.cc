@@ -20,6 +20,7 @@
 #include "common/dout.h"
 #define dout_subsys ceph_subsys_mds
 
+uint64_t MDSInternalContextBase::last_seq;
 
 void MDSInternalContextBase::complete(int r) {
   MDSRank *mds = get_mds();

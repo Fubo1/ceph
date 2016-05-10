@@ -41,8 +41,20 @@ protected:
  */
 class MDSInternalContextBase : public MDSContext
 {
+  static uint64_t last_seq;
+  uint64_t seq;
 public:
-    void complete(int r);
+  MDSInternalContextBase() {
+    seq = ++last_seq;
+  }
+  void complete(int r);
+
+  struct seq_lt {
+    bool operator()(const MDSInternalContextBase* l,
+		    const MDSInternalContextBase* r) const {
+      return l->seq < r->seq;
+    }
+  };
 };
 
 /**

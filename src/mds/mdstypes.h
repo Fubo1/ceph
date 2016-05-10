@@ -1545,6 +1545,7 @@ protected:
   // waiting
  protected:
   compact_multimap<uint64_t, MDSInternalContextBase*>  waiting;
+  static const uint64_t WAIT_LOCK_MASK = ~0xffull;
 
  public:
   bool is_waiter_for(uint64_t mask, uint64_t min=0) {
@@ -1574,9 +1575,16 @@ protected:
   virtual void take_waiting(uint64_t mask, list<MDSInternalContextBase*>& ls) {
     if (waiting.empty()) return;
     compact_multimap<uint64_t,MDSInternalContextBase*>::iterator it = waiting.begin();
+
+    // process lock waiters in the same order that they were added.
+    std::set<MDSInternalContextBase*, MDSInternalContextBase::seq_lt> lock_waiters;
     while (it != waiting.end()) {
       if (it->first & mask) {
-	ls.push_back(it->second);
+
+	if (it->first & WAIT_LOCK_MASK)
+	  lock_waiters.insert(it->second);
+	else
+	  ls.push_back(it->second);
 //	pdout(10,g_conf->debug_mds) << (mdsco_db_line_prefix(this))
 //				   << "take_waiting mask " << hex << mask << dec << " took " << it->second
 //				   << " tag " << hex << it->first << dec
@@ -1590,6 +1598,9 @@ protected:
 //				   << dendl;
 	++it;
       }
+    }
+    for (auto p = lock_waiters.begin(); p != lock_waiters.end(); ++p) {
+      ls.push_back(*p);
     }
     if (waiting.empty())
       put(PIN_WAITER);
