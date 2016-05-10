@@ -184,6 +184,8 @@ private:
   Context *send_flush_aio();
   Context *handle_flush_aio(int *result);
 
+  Context *handle_error(int *result);
+
   void save_result(int *result) {
     if (m_error_result == 0 && *result < 0) {
       m_error_result = *result;
